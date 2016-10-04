@@ -81,6 +81,7 @@ import (
 	"net/url"
 	"os"
 	"sort"
+	"sync"
 	"time"
 )
 
@@ -146,42 +147,50 @@ func collectAllNumbers(endpoints []string) []int {
 	var start time.Time
 	var elapse time.Duration
 	var maximum time.Duration = (MAX_TIMEOUT * 1000000)
+	var wg sync.WaitGroup
 
-	for _, point := range endpoints {
-		start = time.Now()
-		result = Result{}
+	wg.Add(len(endpoints))
 
-		log.Printf("GET (max: %s) %s", maximum, point)
-		client := &http.Client{Timeout: maximum}
-		req, err := http.NewRequest("GET", point, nil)
+	for _, url := range endpoints {
+		go func(wg *sync.WaitGroup, url string) {
+			defer wg.Done()
 
-		req.Header.Set("Accept", "application/json")
-		req.Header.Set("User-Agent", "Mozilla/5.0 (KHTML, like Gecko) Safari/537.36")
+			result = Result{}
+			start = time.Now()
 
-		if err != nil {
-			log.Printf("NewRequest; %s\n", err)
-			continue
-		}
+			client := &http.Client{Timeout: maximum}
+			req, err := http.NewRequest("GET", url, nil)
 
-		resp, err := client.Do(req)
+			req.Header.Set("Accept", "application/json")
+			req.Header.Set("User-Agent", "Mozilla/5.0 (KHTML, like Gecko) Safari/537.36")
 
-		if err != nil {
-			log.Printf("TIMEOUT; %s\n", err)
-			continue
-		}
+			if err != nil {
+				log.Printf("NewRequest; %s\n", err)
+				return
+			}
 
-		defer resp.Body.Close()
+			resp, err := client.Do(req)
 
-		json.NewDecoder(resp.Body).Decode(&result)
+			if err != nil {
+				elapse = time.Since(start)
+				log.Printf("TIMEOUT (%s); %s\n", elapse, err)
+				return
+			}
 
-		elapse = time.Since(start)
-		maximum -= elapse /* Subtract used time */
-		log.Printf("RESPONSE (%s) %#v\n", elapse, result.Numbers)
+			defer resp.Body.Close()
 
-		if result.Numbers != nil {
-			numbers = append(numbers, result.Numbers...)
-		}
+			json.NewDecoder(resp.Body).Decode(&result)
+
+			elapse = time.Since(start)
+			log.Printf("RESPONSE (%s) %#v\n", elapse, result.Numbers)
+
+			if result.Numbers != nil {
+				numbers = append(numbers, result.Numbers...)
+			}
+		}(&wg, url)
 	}
+
+	wg.Wait()
 
 	return numbers
 }

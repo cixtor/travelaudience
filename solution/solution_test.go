@@ -44,6 +44,35 @@ func TestNumberCollector(t *testing.T) {
 	}
 }
 
+func TestNumberCollectorMax(t *testing.T) {
+	input := []string{
+		"http://127.0.0.1:8090/primes",
+		"http://127.0.0.1:8090/fibo",
+		"http://127.0.0.1:8090/odd",
+		"http://127.0.0.1:8090/rand",
+		"http://127.0.0.1:8090/none",
+		"http://127.0.0.1:8090",
+		"http://127.0.0.1:8090/primes",
+		"http://127.0.0.1:8090/fibo",
+		"http://127.0.0.1:8090/odd",
+		"http://127.0.0.1:8090/rand",
+		"http://127.0.0.1:8090/none",
+		"http://127.0.0.1:8090",
+		"http://127.0.0.1:8090/primes",
+		"http://127.0.0.1:8090/fibo",
+		"http://127.0.0.1:8090/odd",
+		"http://127.0.0.1:8090/rand",
+		"http://127.0.0.1:8090/none",
+		"http://127.0.0.1:8090",
+	}
+
+	result := collectAllNumbers(input)
+
+	if reflect.TypeOf(result).String() != "[]int" {
+		t.Fatal("Data returned by the APIs is not []int")
+	}
+}
+
 func TestUniqueNumbers(t *testing.T) {
 	input := []int{1, 1, 1, 2, 3, 3, 4, 5, 6, 6, 6, 6, 6, 7, 8, 9, 9}
 	expected := []int{1, 2, 3, 4, 5, 6, 7, 8, 9}
