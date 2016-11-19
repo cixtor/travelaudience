@@ -85,27 +85,30 @@ import (
 	"time"
 )
 
-/* Time in milliseconds */
-const MAX_TIMEOUT = 500
-const DEFAULT_PORT = "8686"
+// MaxTimeout defines the maximum number of milliseconds that the whole program
+// execution should take with a standard deviation of ~0.20 secs. This is, if
+// the program will run against ten different API endpoints the program should
+// not take more than ~500ms to collect all the numbers provided by these
+// services, timeouts will be fired for every request that takes more than this
+// definition.
+const MaxTimeout = 500
 
+// DefaultPort defines the port number to run the local server.
+const DefaultPort = "8686"
+
+// Result holds the merged list of numbers.
 type Result struct {
 	Numbers []int `json:"numbers"`
 }
 
-/**
- * Validate a list of parameters sent by the client via a HTTP GET request. The
- * function assumes that the user will send a list of strings via a GET
- * parameter named "u" which is not defined as an array, because of this the
- * function will need to take the raw information from the URL to extract all
- * the entries. Notice that some of the strings are not valid URI, the function
- * will try to parse the string, if the scheme is using the HTTP or HTTPS
- * protocols then it will consider it valid.
- *
- * @param  []string params List of valid and invalid URLs.
- * @return []string        List of validated API URLs
- */
-func validApiEndpoints(params []string) []string {
+// ValidAPIEndpoints a list of parameters sent by the client via a GET request.
+// The function assumes that the user will send a list of strings via a GET
+// parameter named "u" which is not defined as an array, because of this the
+// function will need to take the raw information from the URL to extract all
+// the entries. Notice that some of the strings are not valid URI, the function
+// will try to parse the string, if the scheme is using the HTTP or HTTPS
+// protocols then it will consider it valid.
+func ValidAPIEndpoints(params []string) []string {
 	var endpoints []string
 
 	for _, param := range params {
@@ -146,7 +149,7 @@ func collectAllNumbers(endpoints []string) []int {
 	var numbers []int
 	var start time.Time
 	var elapse time.Duration
-	var maximum time.Duration = (MAX_TIMEOUT * 1000000)
+	var maximum time.Duration = (MaxTimeout * 1000000)
 	var wg sync.WaitGroup
 
 	wg.Add(len(endpoints))
@@ -213,7 +216,8 @@ func collectAllNumbers(endpoints []string) []int {
  */
 func simpleUniqueNumbers(numbers []int) []int {
 	var unique []int
-	var total int = len(numbers)
+
+	total := len(numbers)
 
 	if total > 0 {
 		sort.Ints(numbers)
@@ -246,10 +250,10 @@ func simpleUniqueNumbers(numbers []int) []int {
  * @return void
  */
 func solution(w http.ResponseWriter, r *http.Request) {
-	var params []string = r.URL.Query()["u"]
-	var endpoints []string = validApiEndpoints(params)
-	var numbers []int = collectAllNumbers(endpoints)
-	var unique []int = simpleUniqueNumbers(numbers)
+	params := r.URL.Query()["u"]
+	endpoints := ValidAPIEndpoints(params)
+	numbers := collectAllNumbers(endpoints)
+	unique := simpleUniqueNumbers(numbers)
 
 	log.Printf("MERGE: %#v\n", numbers)
 	log.Printf("UNIQUE: %#v\n", unique)
@@ -274,10 +278,10 @@ func homepage(w http.ResponseWriter, r *http.Request) {
  * @return void
  */
 func main() {
-	var port string = os.Getenv("PORT")
+	port := os.Getenv("PORT")
 
 	if port == "" {
-		port = DEFAULT_PORT
+		port = DefaultPort
 	}
 
 	log.Printf("Running server on http://127.0.0.1:%s", port)
